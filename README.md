@@ -5,6 +5,7 @@
 
 * Python 3.6
 * Virtualenv
+  * `pip install virtualenv`
 
 ## Setup
 
