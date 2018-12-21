@@ -24,9 +24,11 @@ class Database():
       json.dump(self.dict, f)
 
   def retrieve_keys(self):
-    return self.dict['images'].keys()
+    return [k for k in self.dict['images'].keys()]
 
   def store_image(self, path):
+    if len(path) == 0:
+      return
     if not self.dict.__contains__('images'):
       self.dict['images']={}
 

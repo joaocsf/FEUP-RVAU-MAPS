@@ -68,6 +68,18 @@ class Application(tk.Frame):
     kp, des = self.calculate_features()
     store_features('test.b', kp, des)
     pass
+  
+  def _cycle_pictures(self):
+    keys = self.database.retrieve_keys()
+    length = len(keys)
+
+    self.CYCLE_PICTURES.config(
+      state= tk.NORMAL if length > 0 else tk.DISABLED,
+      text='Cycle Pictures: {0}/{1}'.format(self.current_selected_index+1, length))
+
+    if(length > 0):
+      self.open_image(keys[self.current_selected_index])
+      self.current_selected_index = (self.current_selected_index + 1)%len(keys)
 
   def create_widgets(self):
     self.image_dependent_buttons = []
@@ -82,6 +94,12 @@ class Application(tk.Frame):
     self.OPEN_IMG['text'] = 'Open'
     self.OPEN_IMG['command'] = self.open_image_dialog
     self.OPEN_IMG.pack(side=tk.LEFT)
+
+    self.CYCLE_PICTURES = tk.Button()
+    self.CYCLE_PICTURES['state'] = tk.DISABLED
+    self.CYCLE_PICTURES['text'] = 'Cycle Pictures'
+    self.CYCLE_PICTURES['command'] = self._cycle_pictures
+    self.CYCLE_PICTURES.pack(side=tk.LEFT)
 
     self.SHOW_KP = tk.Button()
     self.SHOW_KP['state'] = tk.DISABLED
@@ -110,12 +128,22 @@ class Application(tk.Frame):
     self.DEBUG.config(text='Test')
     self.DEBUG.pack(side=tk.BOTTOM)
 
+  def __on_db_loaded__(self):
+    length = len(self.database.retrieve_keys())
+    self.CYCLE_PICTURES.config(
+      state= tk.NORMAL if length > 0 else tk.DISABLED,
+      text='Cycle Pictures: {0}/{1}'.format(self.current_selected_index, length))
+
+    self._cycle_pictures() 
     
+
   def __init__(self, master=None):
     tk.Frame.__init__(self, master)
+    self.current_selected_index = 0
     self.database = Database('db.json')
     self.pack()
     self.create_widgets()
+    self.__on_db_loaded__()
 
 
 def main():
