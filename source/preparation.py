@@ -23,7 +23,7 @@ class Application(tk.Frame):
         )
       )
     
-    self.open_image(filePath)
+    self.load_new_image(filePath)
 
   def click(self, event):
     print(event.x,event.y)
@@ -35,39 +35,28 @@ class Application(tk.Frame):
     for btn in self.image_dependent_buttons:
       btn.config(state=tk.NORMAL if opened else tk.HIDDEN)
 
+  def load_new_image(self, path):
+    self.database.store_image(path)
+    self.current_selected_index = self.database.retrieve_keys().index(path)
+    self._cycle_pictures()
+
   def open_image(self, path):
     cv.namedWindow("selected", cv.WINDOW_NORMAL)
     self.selected_image = cv.imread(path, cv.IMREAD_COLOR)
-    self.database.store_image(path)
+    self.selected_image_path = path
     cv.imshow("selected", self.selected_image)
     self._on_image_opened(True)
   
-  def calculate_features(self):
-    kp, des = calculate_key_points_akaze(self.selected_image)
-    return (kp, des)
-  
   def _show_keypoints(self):
-    kp, _ = self.calculate_features()
+    kp, _ = self.database.retrieve_features(self.selected_image_path)
     self.show_keypoints(kp)
   
   def show_keypoints(self, keypoints):
     kp = keypoints
     img2 = self.selected_image.copy()
     cv.drawKeypoints(img2, kp,img2)
-    self.DEBUG.config(text='Test..')
     cv.namedWindow('keypoints', cv.WINDOW_NORMAL)
     cv.imshow('keypoints', img2)
-    self.DEBUG.config(text='Showing')
-  
-  def load_features(self):
-    kp, _ = load_features('test.b')
-    self.show_keypoints(kp)
-    pass
-  
-  def store_features(self):
-    kp, des = self.calculate_features()
-    store_features('test.b', kp, des)
-    pass
   
   def _cycle_pictures(self):
     keys = self.database.retrieve_keys()
@@ -103,30 +92,11 @@ class Application(tk.Frame):
 
     self.SHOW_KP = tk.Button()
     self.SHOW_KP['state'] = tk.DISABLED
-    self.SHOW_KP['text'] = 'Key Points'
+    self.SHOW_KP['text'] = 'Show Features'
     self.SHOW_KP['command'] = self._show_keypoints
     self.SHOW_KP.pack(side=tk.LEFT)
 
-    self.STORE_FEATURES = tk.Button()
-    self.STORE_FEATURES['state'] = tk.DISABLED
-    self.STORE_FEATURES['text'] = 'Store Features'
-    self.STORE_FEATURES['command'] = self.store_features
-    self.STORE_FEATURES.pack(side=tk.LEFT)
-
-    self.LOAD_FEATURES = tk.Button()
-    self.LOAD_FEATURES['state'] = tk.DISABLED
-    self.LOAD_FEATURES['text'] = 'Load Features'
-    self.LOAD_FEATURES['command'] = self.load_features
-    self.LOAD_FEATURES.pack(side=tk.LEFT)
-
     self.image_dependent_buttons.append(self.SHOW_KP)
-    self.image_dependent_buttons.append(self.STORE_FEATURES)
-    self.image_dependent_buttons.append(self.LOAD_FEATURES)
-
-
-    self.DEBUG = tk.Label()
-    self.DEBUG.config(text='Test')
-    self.DEBUG.pack(side=tk.BOTTOM)
 
   def __on_db_loaded__(self):
     length = len(self.database.retrieve_keys())
@@ -141,6 +111,7 @@ class Application(tk.Frame):
     tk.Frame.__init__(self, master)
     self.current_selected_index = 0
     self.database = Database('db.json')
+    self.selected_image_path = None
     self.pack()
     self.create_widgets()
     self.__on_db_loaded__()
