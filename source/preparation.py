@@ -46,7 +46,8 @@ class Application(tk.Frame):
       return
     self.database.associate_poi(self.selected_image_path, (x,y))
     drawnPOIS = self.draw_pois(self.selected_image_path, self.selected_image)
-    cv.imshow('selected', drawnPOIS)
+    cv.imshow(self.imageWindow, drawnPOIS)
+    cv.waitKey(1)
   
   def draw_pois(self, path, image):
     image = image.copy()
@@ -60,12 +61,11 @@ class Application(tk.Frame):
     return image
 
   def open_image(self, path):
-    cv.namedWindow("selected", cv.WINDOW_NORMAL)
     self.selected_image = cv.imread(path, cv.IMREAD_COLOR)
     self.selected_image_path = path
     drawnPOIS = self.draw_pois(self.selected_image_path, self.selected_image)
-    cv.imshow('selected', drawnPOIS)
-    cv.setMouseCallback('selected', self.mouse_click_callback)
+    cv.imshow(self.imageWindow, drawnPOIS)
+    cv.waitKey(1)
     self._on_image_opened(True)
   
   def _show_keypoints(self):
@@ -78,6 +78,7 @@ class Application(tk.Frame):
     cv.drawKeypoints(img2, kp,img2)
     cv.namedWindow('keypoints', cv.WINDOW_NORMAL)
     cv.imshow('keypoints', img2)
+    cv.waitKey(1)
   
   def _cycle_pictures(self):
     keys = self.database.retrieve_keys()
@@ -109,6 +110,10 @@ class Application(tk.Frame):
 
   def create_widgets(self):
     self.image_dependent_buttons = []
+
+    self.imageWindow = 'selected'
+    cv.namedWindow(self.imageWindow, cv.WINDOW_NORMAL)
+    cv.setMouseCallback(self.imageWindow, self.mouse_click_callback)
 
     self.QUIT = tk.Button()
     self.QUIT['text'] = "Quit"
