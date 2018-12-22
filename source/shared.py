@@ -10,8 +10,10 @@ import os
 class Database():
   def __init__(self, path):
     self.cached_features={}
+    self.selected_poi=0
     self.dict = {
       'images': {},
+      'poi': [],
       'index': 0}
     self.path = path
     try:
@@ -29,6 +31,24 @@ class Database():
 
   def retrieve_keys(self):
     return [k for k in self.dict['images'].keys()]
+  
+  def add_poi(self, poi):
+    self.dict['poi'].append(poi)
+    self.selected_poi = self.dict['poi'].index(poi)
+    self.save()
+  
+  def has_pois(self):
+    return len(self.dict['poi']) != 0
+  
+  def get_poi(self):
+    if len(self.dict['poi']) == 0: return None
+    return self.dict['poi'][self.selected_poi]
+  
+  def get_poi_label(self):
+    return '%s %d/%d'%(self.get_poi(), self.selected_poi+1, len(self.dict['poi']))
+  
+  def next_poi(self):
+    self.selected_poi = (self.selected_poi + 1) % len(self.dict['poi'])
   
   def retrieve_features(self, path):
     images = self.retrieve_images_dict()

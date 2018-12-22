@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import tkinter as tk
 import tkinter.filedialog
+import tkinter.simpledialog
 from PIL import Image
 from shared import *
 import json
@@ -70,6 +71,22 @@ class Application(tk.Frame):
       self.open_image(keys[self.current_selected_index])
       self.current_selected_index = (self.current_selected_index + 1)%len(keys)
 
+  def _update_poi_button(self):
+    self.CYCLE_POI['state'] = tk.NORMAL if self.database.has_pois() else tk.DISABLED
+    self.CYCLE_POI.config(text=self.database.get_poi_label())
+
+  def _add_poi(self):
+    string = tk.simpledialog.askstring('Point of Interest', 'Point of Interest Name')
+    if string is None:
+      return
+    
+    self.database.add_poi(string)
+    self._update_poi_button()
+
+  def _cycle_poi(self):
+    self.database.next_poi()
+    self._update_poi_button()
+
   def create_widgets(self):
     self.image_dependent_buttons = []
 
@@ -77,26 +94,41 @@ class Application(tk.Frame):
     self.QUIT['text'] = "Quit"
     self.QUIT['fg'] = "red"
     self.QUIT['command'] = self.quit
-    self.QUIT.pack(side=tk.LEFT)
+    self.QUIT.grid(row=0, column=0)
 
     self.OPEN_IMG = tk.Button()
     self.OPEN_IMG['text'] = 'Open'
     self.OPEN_IMG['command'] = self.open_image_dialog
-    self.OPEN_IMG.pack(side=tk.LEFT)
+    self.OPEN_IMG.grid(row=0, column=1)
 
     self.CYCLE_PICTURES = tk.Button()
     self.CYCLE_PICTURES['state'] = tk.DISABLED
     self.CYCLE_PICTURES['text'] = 'Cycle Pictures'
     self.CYCLE_PICTURES['command'] = self._cycle_pictures
-    self.CYCLE_PICTURES.pack(side=tk.LEFT)
+    self.CYCLE_PICTURES.grid(row=0, column=2)
 
     self.SHOW_KP = tk.Button()
     self.SHOW_KP['state'] = tk.DISABLED
     self.SHOW_KP['text'] = 'Show Features'
     self.SHOW_KP['command'] = self._show_keypoints
-    self.SHOW_KP.pack(side=tk.LEFT)
+    self.SHOW_KP.grid(row=0, column=3)
+
+    tk.Label(text='Points of Interest:').grid(row=1, column=0, columnspan=2)
+
+    self.ADD_POI = tk.Button()
+    self.ADD_POI['text'] = 'Add'
+    self.ADD_POI['state'] = tk.DISABLED
+    self.ADD_POI['command'] = self._add_poi
+    self.ADD_POI.grid(row=2, column=0, columnspan=1)
+
+    self.CYCLE_POI = tk.Button()
+    self.CYCLE_POI['text'] = 'POI NAME'
+    self.CYCLE_POI['state'] = tk.DISABLED
+    self.CYCLE_POI['command'] = self._cycle_poi
+    self.CYCLE_POI.grid(row=2, column=1, columnspan=2)
 
     self.image_dependent_buttons.append(self.SHOW_KP)
+    self.image_dependent_buttons.append(self.ADD_POI)
 
   def __on_db_loaded__(self):
     length = len(self.database.retrieve_keys())
@@ -105,6 +137,7 @@ class Application(tk.Frame):
       text='Cycle Pictures: {0}/{1}'.format(self.current_selected_index, length))
 
     self._cycle_pictures() 
+    self._update_poi_button()
     
 
   def __init__(self, master=None):
@@ -112,7 +145,7 @@ class Application(tk.Frame):
     self.current_selected_index = 0
     self.database = Database('db.json')
     self.selected_image_path = None
-    self.pack()
+    self.grid()
     self.create_widgets()
     self.__on_db_loaded__()
 
@@ -120,7 +153,7 @@ class Application(tk.Frame):
 def main():
   root = tk.Tk()
   root.title('Toolbox')
-  root.geometry('500x50')
+  root.geometry('500x100')
   app = Application(master=root)
   app.mainloop()
   root.destroy()
