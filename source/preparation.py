@@ -177,7 +177,6 @@ def main():
   app = Application(master=root)
   app.mainloop()
   root.destroy()
-
   pass
 
 

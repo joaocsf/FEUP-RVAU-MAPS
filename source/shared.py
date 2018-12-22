@@ -7,6 +7,8 @@ import pickle
 import json
 import os
 
+MIN_MATCH_COUNT = 10
+
 class Database():
   def __init__(self, path):
     self.cached_features={}
@@ -65,6 +67,12 @@ class Database():
     pois = self._retrieve_pois(path)
     pois[self.get_poi()] = coordinates
     self.save()
+  
+  def calculate_best_homogragy(self, image_features):
+    someImage = self.retrieve_keys()[0] 
+    features = self.retrieve_features(someImage)
+    H = compute_homography_matrix(features, image_features)
+    return (H, self.retrieve_pois(someImage))
 
   def retrieve_features(self, path):
     images = self.retrieve_images_dict()
@@ -114,6 +122,7 @@ class Database():
     self._compute_features(path)
     self.save()
 
+# Helper Methods
 def image_cv_2_tk(image):
   image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
   pilFormat = Image.fromarray(image)
@@ -176,11 +185,38 @@ def load_features(path):
   array = pickle.load(open(path, 'rb'))
   return pickle_to_features(array)
 
+def compute_homography_matrix(features1, features2):
+  FLANN_INDEX_KDTREE = 0
+  index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+  search_params = dict(checks = 10)
 
+  fb = cv.BFMatcher()
+  des1 = features1[1]
+  des2 = features2[1]
+
+  print('\n\n\nFEATURES1')
+  print(des1.shape)
+  pprint(des1)
+  print('\n\n\nFEATURES2')
+  print(des2.shape)
+  pprint(des2)
+
+  matches = fb.knnMatch(des1, des2, k=2)
+  good = []
+
+  for m,n in matches:
+    if m.distance < 0.7*n.distance:
+      good.append(m)
+  
+  if len(good) > MIN_MATCH_COUNT:
+    pts1 = np.float32([features1[0][m.queryIdx].pt for m in good]).reshape(-1,1,2)
+    pts2 = np.float32([features2[0][m.trainIdx].pt for m in good]).reshape(-1,1,2)
+
+    H, mask = cv.findHomography(pts1, pts2, cv.RANSAC, 5.0)
+    return H
+  else:
+    return None
 
 
 if __name__ == "__main__":
     pass
-
-
-
