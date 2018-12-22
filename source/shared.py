@@ -7,7 +7,7 @@ import pickle
 import json
 import os
 
-MIN_MATCH_COUNT = 10
+MIN_MATCH_COUNT = 5
 
 class Database():
   def __init__(self, path):
@@ -186,22 +186,25 @@ def load_features(path):
   return pickle_to_features(array)
 
 def compute_homography_matrix(features1, features2):
-  FLANN_INDEX_KDTREE = 0
-  index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-  search_params = dict(checks = 10)
+  FLANN_INDEX_KDTREE = 1
+  FLANN_INDEX_LSH = 6
+  # index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+  # search_params = dict(algorithm = FLANN_INDEX_LSH,
+  #                  table_number = 6, # 12
+  #                  key_size = 12,     # 20
+  #                  multi_probe_level = 1)
 
-  fb = cv.BFMatcher()
   des1 = features1[1]
   des2 = features2[1]
 
-  print('\n\n\nFEATURES1')
-  print(des1.shape)
-  pprint(des1)
-  print('\n\n\nFEATURES2')
-  print(des2.shape)
-  pprint(des2)
+  fb = cv.BFMatcher()
+
+  # fb = cv.FlannBasedMatcher(index_params, search_params)
+  # des1 = np.float32(des1)
+  # des2 = np.float32(des2)
 
   matches = fb.knnMatch(des1, des2, k=2)
+
   good = []
 
   for m,n in matches:

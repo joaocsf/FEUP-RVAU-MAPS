@@ -14,19 +14,22 @@ def evaluate(image):
   database = Database('db.json')
 
   features = calculate_key_points_akaze(image)
-  pprint(features[1])
+
+  if features[1] is None: return image
+
   (homography, pois) = database.calculate_best_homogragy(features)
+
+  if homography is None: return image
 
   for k, p in pois.items():
     rp = homography @ (p[0],p[1],1)
     dp = (rp[0]/rp[2], rp[1]/rp[2])
     dp = (int(dp[0]), int(dp[1]))
-    pprint(dp)
     cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX, 2, (0,255,0), 2, cv.LINE_AA)
     cv.circle(image, dp, 5, (0,0,255), thickness=-1)
 
   cv.drawKeypoints(image, features[0], image)
-  cv.imshow('result', image)
+  return image
 
 def open_file():
   filePath = tk.filedialog.askopenfilename(
@@ -39,19 +42,17 @@ def open_file():
       )
 
   img = cv.imread(filePath, cv.IMREAD_COLOR)
-  evaluate(img)
+  img = evaluate(img)
+  cv.imshow('test', img)
 
 def real_time():
-  cap = cv.VideoCapture(1)
+  cap = cv.VideoCapture(0)
   while True:
     ret, img = cap.read()
-    cv.imshow('test', ret)
-    try:
-      evaluate(img)
-      pass
-    except cv.error:
-      pass
+
+    img = evaluate(img)
     
+    cv.imshow('test', img)
     if cv.waitKey(1) == 27: break
 
 
