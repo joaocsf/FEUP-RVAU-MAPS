@@ -7,19 +7,10 @@ from PIL import Image
 from shared import *
 import json
 from pprint import pprint
+from sys import argv
 
 
-def main():
-  filePath = tk.filedialog.askopenfilename(
-      title='Select a Map\'s Image',
-      filetypes=(
-        ('all files', '*'), 
-        ('jpeg files', '*.jpg'), 
-        ('png files','*.png')
-        )
-      )
-  
-  image = cv.imread(filePath, cv.IMREAD_COLOR)
+def evaluate(image):
   database = Database('db.json')
 
   features = calculate_key_points_akaze(image)
@@ -37,7 +28,38 @@ def main():
   cv.drawKeypoints(image, features[0], image)
   cv.imshow('result', image)
 
-  while cv.waitKey(1) != 27: continue
+def open_file():
+  filePath = tk.filedialog.askopenfilename(
+      title='Select a Map\'s Image',
+      filetypes=(
+        ('all files', '*'), 
+        ('jpeg files', '*.jpg'), 
+        ('png files','*.png')
+        )
+      )
+
+  img = cv.imread(filePath, cv.IMREAD_COLOR)
+  evaluate(img)
+
+def real_time():
+  cap = cv.VideoCapture(1)
+  while True:
+    ret, img = cap.read()
+    cv.imshow('test', ret)
+    try:
+      evaluate(img)
+      pass
+    except cv.error:
+      pass
+    
+    if cv.waitKey(1) == 27: break
+
+
+def main():
+  if argv[1] == '-real-time':
+    real_time()
+  else:
+    open_file()
 
 if __name__ == "__main__":
   main()
