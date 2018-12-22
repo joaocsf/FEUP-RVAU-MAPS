@@ -50,6 +50,22 @@ class Database():
   def next_poi(self):
     self.selected_poi = (self.selected_poi + 1) % len(self.dict['poi'])
   
+  def _retrieve_pois(self, path):
+    images = self.retrieve_images_dict()
+    obj = images[path]
+    if not obj.__contains__('pois'):
+      obj['pois'] = {}
+
+    return obj['pois']
+  
+  def retrieve_pois(self, path):
+    return self._retrieve_pois(path)
+  
+  def associate_poi(self, path, coordinates):
+    pois = self._retrieve_pois(path)
+    pois[self.get_poi()] = coordinates
+    self.save()
+
   def retrieve_features(self, path):
     images = self.retrieve_images_dict()
     obj = images[path]

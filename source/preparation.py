@@ -40,12 +40,32 @@ class Application(tk.Frame):
     self.database.store_image(path)
     self.current_selected_index = self.database.retrieve_keys().index(path)
     self._cycle_pictures()
+  
+  def mouse_click_callback(self, event, x, y, flags, param):
+    if not event == cv.EVENT_LBUTTONDBLCLK:
+      return
+    self.database.associate_poi(self.selected_image_path, (x,y))
+    drawnPOIS = self.draw_pois(self.selected_image_path, self.selected_image)
+    cv.imshow('selected', drawnPOIS)
+  
+  def draw_pois(self, path, image):
+    image = image.copy()
+    pois = self.database.retrieve_pois(path)
+
+    for k, v in pois.items():
+      point = (v[0], v[1])
+      cv.circle(image, point, 5, (0,255,0), thickness=-1)
+      cv.putText(image, k, point, cv.FONT_HERSHEY_SIMPLEX, 2, (0,255,0), 2, cv.LINE_AA)
+
+    return image
 
   def open_image(self, path):
     cv.namedWindow("selected", cv.WINDOW_NORMAL)
     self.selected_image = cv.imread(path, cv.IMREAD_COLOR)
     self.selected_image_path = path
-    cv.imshow("selected", self.selected_image)
+    drawnPOIS = self.draw_pois(self.selected_image_path, self.selected_image)
+    cv.imshow('selected', drawnPOIS)
+    cv.setMouseCallback('selected', self.mouse_click_callback)
     self._on_image_opened(True)
   
   def _show_keypoints(self):
