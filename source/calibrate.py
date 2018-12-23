@@ -50,8 +50,8 @@ Y = 6
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
  
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-objp = np.zeros((9*6,3), np.float32)
-objp[:,:2] = np.mgrid[0:6,0:9].T.reshape(-1,2)
+objp = np.zeros((X*Y,3), np.float32)
+objp[:,:2] = np.mgrid[0:Y,0:X].T.reshape(-1,2)
 
 # Arrays to store object points and image points from all the images.
 objpoints = [] # 3d point in real world space
@@ -64,7 +64,7 @@ for fname in images:
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
     # Find the chess board corners
-    ret, corners = cv2.findChessboardCorners(gray, (6,9),None)
+    ret, corners = cv2.findChessboardCorners(gray, (Y,X),None)
 
     # If found, add object points, image points (after refining them)
     print(ret)
@@ -75,7 +75,7 @@ for fname in images:
         imgpoints.append(corners)
 
         # Draw and display the corners
-        cv2.drawChessboardCorners(img, (6,9), corners,ret)
+        cv2.drawChessboardCorners(img, (Y,X), corners,ret)
         cv2.imshow('Chessboard patterns',img)
         cv2.waitKey(1)
 
