@@ -8,7 +8,9 @@ from shared import *
 import json
 from pprint import pprint
 from sys import argv
+import argparse
 
+index = 0
 
 def evaluate(image):
   database = Database('db.json')
@@ -46,7 +48,7 @@ def open_file():
   cv.imshow('test', img)
 
 def real_time():
-  cap = cv.VideoCapture(0)
+  cap = cv.VideoCapture(index)
   while True:
     ret, img = cap.read()
 
@@ -57,7 +59,20 @@ def real_time():
 
 
 def main():
-  if argv[1] == '-real-time':
+  parser = argparse.ArgumentParser(description='Calibrate camera')
+
+  parser.add_argument('-cam', metavar='index', type=int, help='index of the camera', default=0)
+
+  parser.add_argument('-realtime', action='store_true')
+
+  args = parser.parse_args()
+
+  global index
+  index = args.cam
+
+  realtime = args.realtime
+
+  if realtime:
     real_time()
   else:
     open_file()

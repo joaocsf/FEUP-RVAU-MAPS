@@ -10,6 +10,8 @@ parser = argparse.ArgumentParser(description='Calibrate camera')
 
 parser.add_argument('-cam', metavar='index', type=int, help='index of the camera', default=0)
 
+parser.add_argument('-realtime', action='store_true')
+
 args = parser.parse_args()
 
 index = args.cam
