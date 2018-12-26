@@ -58,7 +58,8 @@ def evaluate(image):
         for k, dp in poilist:
             cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX,
                     2, (0, 255, 0), 2, cv.LINE_AA)
-            cv.circle(image, dp, 5, (0, 0, 255), thickness=-1)
+            cv.circle(image, dp, 5, (0, 0, 0), thickness=-1)
+            cv.circle(image, dp, 3, (0, 255, 0), thickness=-1)
             cv.drawKeypoints(image, features[0], image)
             if k == poilist[closest_i][0]:
                 cv.line(image, dp, (centerx,centery),(0,0,255),thickness=3)
@@ -68,7 +69,8 @@ def evaluate(image):
         k, dp = poilist[closest_i]
         cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX,
                 2, (0, 255, 0), 2, cv.LINE_AA)
-        cv.circle(image, dp, 5, (0, 0, 255), thickness=-1)
+        cv.circle(image, dp, 5, (0, 0, 0), thickness=-1)
+        cv.circle(image, dp, 3, (0, 255, 0), thickness=-1)
 
     return image
 

@@ -7,6 +7,7 @@ from PIL import Image
 from shared import *
 import json
 from pprint import pprint
+import math
 
 
 class Application(tk.Frame):
@@ -56,9 +57,11 @@ class Application(tk.Frame):
 
         for k, v in pois.items():
             point = (v[0], v[1])
-            cv.circle(image, point, 5, (0, 255, 0), thickness=-1)
             cv.putText(image, k, point, cv.FONT_HERSHEY_SIMPLEX,
-                       2, (0, 255, 0), 2, cv.LINE_AA)
+                    2, (0, 170, 0), 2, cv.LINE_AA)
+            cv.circle(image, point, 5, (0, 0, 0), thickness=-1)
+            cv.circle(image, point, 3, (0, 170, 0), thickness=-1)
+        poiimgpath = self.database.get_poi_image()
 
         return image
 
@@ -81,6 +84,16 @@ class Application(tk.Frame):
         cv.drawKeypoints(img2, kp, img2)
         cv.namedWindow('keypoints', cv.WINDOW_NORMAL)
         cv.imshow('keypoints', img2)
+        cv.waitKey(1)
+
+    def _show_image(self):
+        path = self.database.get_poi_image()
+        self.show_image(path)
+
+    def show_image(self, path):
+        image = cv.imread(path)
+        cv.namedWindow('image', cv.WINDOW_NORMAL)
+        cv.imshow('image', image)
         cv.waitKey(1)
 
     def _cycle_pictures(self):
@@ -118,7 +131,7 @@ class Application(tk.Frame):
             )
         )
         self.database.add_poi_image(filePath)
-        
+
         self._update_poi_button()
 
     def _cycle_poi(self):
@@ -164,14 +177,21 @@ class Application(tk.Frame):
         self.ADD_POI['command'] = self._add_poi
         self.ADD_POI.grid(row=2, column=0, columnspan=1)
 
+        self.IMAGE_POI = tk.Button()
+        self.IMAGE_POI['text'] = 'Show image'
+        self.IMAGE_POI['state'] = tk.DISABLED
+        self.IMAGE_POI['command'] = self._show_image
+        self.IMAGE_POI.grid(row=2, column=1, columnspan=1)
+
         self.CYCLE_POI = tk.Button()
         self.CYCLE_POI['text'] = 'POI NAME'
         self.CYCLE_POI['state'] = tk.DISABLED
         self.CYCLE_POI['command'] = self._cycle_poi
-        self.CYCLE_POI.grid(row=2, column=1, columnspan=2)
+        self.CYCLE_POI.grid(row=2, column=2, columnspan=1)
 
         self.image_dependent_buttons.append(self.SHOW_KP)
         self.image_dependent_buttons.append(self.ADD_POI)
+        self.image_dependent_buttons.append(self.IMAGE_POI)
 
     def __on_db_loaded__(self):
         length = len(self.database.retrieve_keys())
