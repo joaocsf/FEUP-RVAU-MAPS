@@ -30,7 +30,7 @@ class Database():
             pass
     def get_calibration(self):
       return self.calibration
-    
+
     def save(self):
         with open(self.path, 'w') as f:
             json.dump(self.dict, f)
@@ -62,6 +62,10 @@ class Database():
         if len(self.dict['poi']) == 0:
             return None
         return self.dict['poi'][self.selected_poi]['image']
+
+
+    def get_pois(self):
+        return self.dict['poi']
 
     def get_poi_label(self):
         return '%s %d/%d' % (self.get_poi(), self.selected_poi + 1, len(self.dict['poi']))
@@ -256,7 +260,7 @@ def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_
             [features1[0][m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
         pts2 = np.float32(
             [features2[0][m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-        
+
         pts3 = []
         for pt in pts1:
           pts3.append([pt[0][0], pt[0][1], 0])

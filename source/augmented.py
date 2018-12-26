@@ -16,7 +16,7 @@ index = 0
 database = Database('db.json')
 axis = np.float32([[-1,-1,0], [-1,1,0], [1,1,0], [1,-1,0],
                    [0,0,-2]])
-
+poi_imgs = {}
 debug = False
 axis = axis*50
 
@@ -38,6 +38,7 @@ def draw_axis(image, poi, rvec, tvec, H):
 def evaluate(image):
     global database
     global debug
+    global poi_imgs
 
     height, width, _ = image.shape
     centery = math.floor(height/2)
@@ -92,9 +93,14 @@ def evaluate(image):
         k, dp = poilist[closest_i]
         cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX,
                 2, (0, 255, 0), 2, cv.LINE_AA)
-<<<<<<< HEAD
+
         cv.circle(image, dp, 5, (0, 0, 0), thickness=-1)
         cv.circle(image, dp, 3, (0, 255, 0), thickness=-1)
+
+    imgx = math.floor(image.shape[1]/5)
+    imgy = math.floor(image.shape[0]/5)
+    img = cv.resize(poi_imgs[poilist[closest_i][0]],(imgx,imgy))
+    image[image.shape[0]-5-imgy:image.shape[0]-5,image.shape[1]-5-imgx:image.shape[1]-5] = img
 
     return image
 
@@ -126,6 +132,14 @@ def real_time():
         if cv.waitKey(1) == 27:
             break
 
+def load_images():
+    global poi_imgs
+    global database
+    pois = database.get_pois()
+    for p in pois:
+        img = cv.imread(p['image'])
+        poi_imgs[p['name']] = img
+
 
 def main():
     parser = argparse.ArgumentParser(description='Calibrate camera')
@@ -146,6 +160,8 @@ def main():
     debug = args.debug
 
     realtime = args.realtime
+
+    load_images()
 
     if realtime:
         real_time()
