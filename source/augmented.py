@@ -45,10 +45,8 @@ def evaluate(image):
     centerx = math.floor(width/2)
 
     #draw crosshair
-    cv.rectangle(image, (centerx-20,centery-2), (centerx+20,centery+2),(0,0,0),thickness=-1)
-    cv.rectangle(image, (centerx-2,centery-20), (centerx+2,centery+20),(0,0,0),thickness=-1)
-    cv.rectangle(image, (centerx-18,centery-0), (centerx+18,centery+0),(255,255,255),thickness=-1)
-    cv.rectangle(image, (centerx-0,centery-18), (centerx+0,centery+18),(255,255,255),thickness=-1)
+    cv.circle(image, (centerx,centery), 5, (0, 0, 0), thickness=-1)
+    cv.circle(image, (centerx,centery), 3, (0, 255, 255), thickness=-1)
 
     features = calculate_key_points_akaze(image)
 
@@ -99,8 +97,9 @@ def evaluate(image):
 
     imgx = math.floor(image.shape[1]/5)
     imgy = math.floor(image.shape[0]/5)
-    img = cv.resize(poi_imgs[poilist[closest_i][0]],(imgx,imgy))
-    image[image.shape[0]-5-imgy:image.shape[0]-5,image.shape[1]-5-imgx:image.shape[1]-5] = img
+    if poi_imgs[poilist[closest_i][0]] is not None:
+        img = cv.resize(poi_imgs[poilist[closest_i][0]],(imgx,imgy))
+        image[image.shape[0]-5-imgy:image.shape[0]-5,image.shape[1]-5-imgx:image.shape[1]-5] = img
 
     return image
 
