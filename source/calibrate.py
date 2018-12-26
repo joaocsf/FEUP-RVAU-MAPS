@@ -5,6 +5,7 @@ import cv2
 import os
 import sys
 import argparse
+from shared import *
 
 parser = argparse.ArgumentParser(description='Calibrate camera')
 
@@ -89,3 +90,4 @@ cv2.waitKey(0)
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
 
 # store mtx and dist
+store_camera_calibration('calibration.npy', mtx, dist)

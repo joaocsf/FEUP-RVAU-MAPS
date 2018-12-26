@@ -14,8 +14,24 @@ import math
 index = 0
 
 database = Database('db.json')
+axis = np.float32([[0,0,0], [0,3,0], [3,3,0], [3,0,0],
+                   [0,0,-3],[0,3,-3],[3,3,-3],[3,0,-3] ])
 
 debug = False
+axis = axis*50
+
+def draw_axis(image, pois, rvec, tvec, H):
+  global database, axis
+
+  intrinsic, dist = database.get_calibration()
+  points, _ = cv.projectPoints(axis, rvec, tvec, intrinsic, dist)
+
+  points = np.int32(points).reshape(-1,2)
+  cv.drawContours(image, [points[:4]], -1, (150,200,10), 3)
+  for i,j in zip(range(4),range(4,8)):
+    cv.line(image, tuple(points[i]), tuple(points[j]),(255),3)
+
+  cv.drawContours(image, [points[4:]],-1,(200,150,10),3)
 
 def evaluate(image):
     global database
@@ -36,10 +52,13 @@ def evaluate(image):
     if features[1] is None:
         return image
 
-    (homography, pois) = database.calculate_best_homogragy(features)
+    (T, pois) = database.calculate_best_homogragy(features)
 
-    if homography is None:
+    if T is None or T[0] is None:
         return image
+
+    homography, rvec, tvec = T
+    draw_axis(image, pois, rvec, tvec, homography)
 
     poilist = []
     closest_i = 0
@@ -69,7 +88,6 @@ def evaluate(image):
         cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX,
                 2, (0, 255, 0), 2, cv.LINE_AA)
         cv.circle(image, dp, 5, (0, 0, 255), thickness=-1)
-
     return image
 
 
