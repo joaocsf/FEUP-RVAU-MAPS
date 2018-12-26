@@ -14,6 +14,7 @@ class Database():
     def __init__(self, path):
         self.cached_features = {}
         self.selected_poi = 0
+        self.calibration = load_camera_calibration('calibration.npy')
         self.dict = {
             'images': {},
             'poi': [],
@@ -27,7 +28,9 @@ class Database():
         except FileNotFoundError:
             print('File Not Found Creating new one')
             pass
-
+    def get_calibration(self):
+      return self.calibration
+    
     def save(self):
         with open(self.path, 'w') as f:
             json.dump(self.dict, f)
@@ -85,8 +88,8 @@ class Database():
     def calculate_best_homogragy(self, image_features):
         someImage = self.retrieve_keys()[0]
         features = self.retrieve_features(someImage)
-        H = compute_homography_matrix(features, image_features)
-        return (H, self.retrieve_pois(someImage))
+        T = compute_transformations_matrix(features, image_features, self.calibration[0], self.calibration[1])
+        return (T, self.retrieve_pois(someImage))
 
     def retrieve_features(self, path):
         images = self.retrieve_images_dict()
@@ -210,8 +213,18 @@ def load_features(path):
     array = pickle.load(open(path, 'rb'))
     return pickle_to_features(array)
 
+def store_camera_calibration(path, matrix, dist_coefs):
+  np.save(path, np.array([matrix, dist_coefs]))
 
-def compute_homography_matrix(features1, features2):
+def load_camera_calibration(path):
+  return np.load(path)
+
+def homography_point(H, p):
+  rp = H @ (p[0], p[1], 1)
+  dp = (int(rp[0] / rp[2]), int(rp[1] / rp[2]))
+  return dp
+
+def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_points):
     FLANN_INDEX_KDTREE = 1
     FLANN_INDEX_LSH = 6
     # index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
@@ -243,9 +256,19 @@ def compute_homography_matrix(features1, features2):
             [features1[0][m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
         pts2 = np.float32(
             [features2[0][m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+        
+        pts3 = []
+        for pt in pts1:
+          pts3.append([pt[0][0], pt[0][1], 0])
+
+        pts3 = np.float32(pts3).reshape(-1,1,3)
 
         H, mask = cv.findHomography(pts1, pts2, cv.RANSAC, 5.0)
-        return H
+
+
+        _, rvec, tvec, _= cv.solvePnPRansac(pts3, pts2,intrinsic_matrix, coef_points)
+
+        return H, rvec, tvec
     else:
         return None
 
