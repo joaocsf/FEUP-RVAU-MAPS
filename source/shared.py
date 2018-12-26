@@ -265,10 +265,8 @@ def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_
 
         H, mask = cv.findHomography(pts1, pts2, cv.RANSAC, 5.0)
 
-        if len(pts1) < 4 or len(pts2) < 4:
-          return None
 
-        _, rvec, tvec = cv.solvePnP(pts3, pts2,intrinsic_matrix, None)
+        _, rvec, tvec, _= cv.solvePnPRansac(pts3, pts2,intrinsic_matrix, coef_points)
 
         return H, rvec, tvec
     else:

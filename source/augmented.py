@@ -14,24 +14,26 @@ import math
 index = 0
 
 database = Database('db.json')
-axis = np.float32([[0,0,0], [0,3,0], [3,3,0], [3,0,0],
-                   [0,0,-3],[0,3,-3],[3,3,-3],[3,0,-3] ])
+axis = np.float32([[-1,-1,0], [-1,1,0], [1,1,0], [1,-1,0],
+                   [0,0,-2]])
 
 debug = False
 axis = axis*50
 
-def draw_axis(image, pois, rvec, tvec, H):
+def draw_axis(image, poi, rvec, tvec, H):
   global database, axis
+  axis1 = np.float32([ [x[0] + poi[0], x[1] + poi[1], x[2]] for x in axis])
 
   intrinsic, dist = database.get_calibration()
-  points, _ = cv.projectPoints(axis, rvec, tvec, intrinsic, dist)
+  points, _ = cv.projectPoints(axis1, rvec, tvec, intrinsic, dist)
 
   points = np.int32(points).reshape(-1,2)
-  cv.drawContours(image, [points[:4]], -1, (150,200,10), 3)
-  for i,j in zip(range(4),range(4,8)):
-    cv.line(image, tuple(points[i]), tuple(points[j]),(255),3)
+  #Draw Base
+  cv.drawContours(image, [points[:4]], -1, (0,200,10), 3)
+  #Draw Edges
+  for i in range(4):
+    cv.line(image, tuple(points[i]), tuple(points[-1]),(0,255,0),3)
 
-  cv.drawContours(image, [points[4:]],-1,(200,150,10),3)
 
 def evaluate(image):
     global database
@@ -58,11 +60,11 @@ def evaluate(image):
         return image
 
     homography, rvec, tvec = T
-    draw_axis(image, pois, rvec, tvec, homography)
 
     poilist = []
     closest_i = 0
     closest_dist = 100000000000
+    selected_poi = None
     for k, p in pois.items():
         rp = homography @ (p[0], p[1], 1)
         dp = (rp[0] / rp[2], rp[1] / rp[2])
@@ -70,9 +72,11 @@ def evaluate(image):
         poilist.append((k,dp))
         distance = cv.norm(dp, (centerx,centery))
         if distance < closest_dist:
+            selected_poi = p
             closest_dist = distance
             closest_i = len(poilist)-1
 
+    draw_axis(image, selected_poi, rvec, tvec, homography)
     if debug:
         for k, dp in poilist:
             cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX,
