@@ -36,8 +36,15 @@ class Database():
         return [k for k in self.dict['images'].keys()]
 
     def add_poi(self, poi):
-        self.dict['poi'].append(poi)
-        self.selected_poi = self.dict['poi'].index(poi)
+        obj = {}
+        obj['name'] = poi
+        obj['image'] = ''
+        self.dict['poi'].append(obj)
+        self.selected_poi = len(self.dict['poi'])-1
+        self.save()
+
+    def add_poi_image(self, path):
+        self.dict['poi'][self.selected_poi]['image'] = path
         self.save()
 
     def has_pois(self):
@@ -46,7 +53,12 @@ class Database():
     def get_poi(self):
         if len(self.dict['poi']) == 0:
             return None
-        return self.dict['poi'][self.selected_poi]
+        return self.dict['poi'][self.selected_poi]['name']
+
+    def get_poi_image(self):
+        if len(self.dict['poi']) == 0:
+            return None
+        return self.dict['poi'][self.selected_poi]['image']
 
     def get_poi_label(self):
         return '%s %d/%d' % (self.get_poi(), self.selected_poi + 1, len(self.dict['poi']))

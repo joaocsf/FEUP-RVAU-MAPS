@@ -108,6 +108,17 @@ class Application(tk.Frame):
             return
 
         self.database.add_poi(string)
+
+        filePath = tk.filedialog.askopenfilename(
+            title='Select a POI\'s Image',
+            filetypes=(
+                ('all files', '*'),
+                ('jpeg files', '*.jpg'),
+                ('png files', '*.png')
+            )
+        )
+        self.database.add_poi_image(filePath)
+        
         self._update_poi_button()
 
     def _cycle_poi(self):
