@@ -27,11 +27,19 @@ def draw_axis(image, poi, rvec, tvec, H):
   intrinsic, dist = database.get_calibration()
   points, _ = cv.projectPoints(axis1, rvec, tvec, intrinsic, dist)
 
+  height, width = image.shape[:2]
+
+  points = [ [np.clip(x[0][0],0,width), np.clip(x[0][1], 0, height)]  for x in points]
   points = np.int32(points).reshape(-1,2)
+  
+
   #Draw Base
+  cv.drawContours(image, [points[:4]], -1, (0,100,10), -3)
   cv.drawContours(image, [points[:4]], -1, (0,200,10), 3)
   #Draw Edges
   for i in range(4):
+    tmp = np.array([points[i], points[i+1], points[-1]])
+    cv.drawContours(image, [tmp], -1, (0,200,10), -1)
     cv.line(image, tuple(points[i]), tuple(points[-1]),(0,255,0),3)
 
 

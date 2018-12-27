@@ -17,6 +17,7 @@ class Database():
         self.calibration = load_camera_calibration('calibration.npy')
         self.dict = {
             'images': {},
+            'main_image': None,
             'poi': [],
             'index': 0}
         self.path = path
@@ -84,17 +85,24 @@ class Database():
     def retrieve_pois(self, path):
         return self._retrieve_pois(path)
 
-    def associate_poi(self, path, coordinates):
+    def associate_poi(self, path, coordinates, poiName=None, update=True):
         pois = self._retrieve_pois(path)
-        pois[self.get_poi()] = coordinates
+        pois[self.get_poi() if poiName is None else poiName] = coordinates
+        if update:
+            self.update_key_points(path)
         self.save()
 
     def calculate_best_homogragy(self, image_features):
-        someImage = self.retrieve_keys()[0]
-        features = self.retrieve_features(someImage)
-        T = compute_transformations_matrix(features, image_features, self.calibration[0], self.calibration[1])
-        return (T, self.retrieve_pois(someImage))
 
+        for someImage in self.retrieve_keys():
+            features = self.retrieve_features(someImage)
+            T = compute_transformations_matrix(features, image_features, self.calibration[0], self.calibration[1])
+            if T is None: continue
+            H, rvec, tvec = T
+            if not H is None:
+                return (T, self.retrieve_pois(someImage))
+
+        return ((None, None, None), self.retrieve_pois(someImage))
     def retrieve_features(self, path):
         images = self.retrieve_images_dict()
         obj = images[path]
@@ -120,6 +128,23 @@ class Database():
         kp, des = calculate_key_points_akaze(image)
         store_features(features_filename, kp, des)
 
+    def update_key_points(self, control_image):
+        control_features = self.retrieve_features(control_image)
+        control_pois = self.retrieve_pois(control_image)
+
+        img_keys = self.retrieve_keys()
+
+        for key in img_keys:
+            if key == control_image: continue
+            image_features = self.retrieve_features(key)
+            H = compute_homography(control_features, image_features)
+
+            if H is None : continue
+            
+            for name, point in control_pois.items():
+                new_point = homography_point(H, point)
+                self.associate_poi(key, new_point, name, False)
+
     def retrieve_images_dict(self):
         if not self.dict.__contains__('images'):
             self.dict['images'] = {}
@@ -139,8 +164,14 @@ class Database():
             images[path] = {}
         else:
             return
-
+        
         self._compute_features(path)
+
+        if self.dict['main_image'] is None:
+            self.dict['main_image'] = path
+        else:
+            self.update_key_points(self.dict['main_image'])
+
         self.save()
 
 # Helper Methods
@@ -227,6 +258,33 @@ def homography_point(H, p):
   rp = H @ (p[0], p[1], 1)
   dp = (int(rp[0] / rp[2]), int(rp[1] / rp[2]))
   return dp
+
+def compute_homography(features1, features2):
+    des1 = features1[1]
+    des2 = features2[1]
+
+    fb = cv.BFMatcher()
+
+    matches = fb.knnMatch(des1, des2, k=2)
+
+    good = []
+    try:
+        for m, n in matches:
+            if m.distance < 0.7 * n.distance:
+                good.append(m)
+    except:
+        return None
+
+    if len(good) > MIN_MATCH_COUNT:
+        pts1 = np.float32(
+            [features1[0][m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+        pts2 = np.float32(
+            [features2[0][m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+
+        H, mask = cv.findHomography(pts1, pts2, cv.RANSAC, 5.0)
+        return H
+    else:
+        return None
 
 def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_points):
     FLANN_INDEX_KDTREE = 1
