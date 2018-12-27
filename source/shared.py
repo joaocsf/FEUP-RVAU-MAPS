@@ -14,7 +14,11 @@ class Database():
     def __init__(self, path):
         self.cached_features = {}
         self.selected_poi = 0
-        self.calibration = load_camera_calibration('calibration.npy')
+        try:
+            self.calibration = load_camera_calibration('calibration.npy')
+        except:
+            print('Calibrate the camera first!')
+            exit()
         self.dict = {
             'images': {},
             'main_image': None,

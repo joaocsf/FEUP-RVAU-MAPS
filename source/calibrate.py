@@ -11,11 +11,13 @@ parser = argparse.ArgumentParser(description='Calibrate camera')
 
 parser.add_argument('-cam', metavar='index', type=int, help='index of the camera', default=0)
 
-parser.add_argument('-realtime', action='store_true')
+parser.add_argument('-debug', action='store_true')
 
 args = parser.parse_args()
 
 index = args.cam
+
+debug = args.debug
 
 print('Take pictures of multiple chessboards to calibrate\n-Space to take a picture\n-Esc to end')
 
@@ -62,6 +64,8 @@ imgpoints = [] # 2d points in image plane.
 
 images = glob.glob('chessboards/opencv_frame_*.png')
 
+toshow = []
+
 for fname in images:
     img = cv2.imread(fname)
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -70,7 +74,11 @@ for fname in images:
     ret, corners = cv2.findChessboardCorners(gray, (Y,X),None)
 
     # If found, add object points, image points (after refining them)
-    print(ret)
+    if ret:
+        print('Found chessboard!')
+    else:
+        print('Didnt find chessboard')
+        
     if ret == True:
         objpoints.append(objp)
 
@@ -79,15 +87,22 @@ for fname in images:
 
         # Draw and display the corners
         cv2.drawChessboardCorners(img, (Y,X), corners,ret)
-        cv2.imshow('Chessboard patterns',img)
-        cv2.waitKey(1)
+        toshow.append(img)
 
 for fname in images:
     os.remove(fname)
 
-cv2.waitKey(0)
+
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
 
 # store mtx and dist
 store_camera_calibration('calibration.npy', mtx, dist)
+
+print('Calibration successful!')
+
+if debug:
+    for i in range(0, len(toshow)):
+        cv2.imshow('Checkboard #' + str(i), toshow[i])
+
+    cv2.waitKey(0)
