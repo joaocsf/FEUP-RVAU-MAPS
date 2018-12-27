@@ -8,7 +8,8 @@ from shared import *
 import json
 from pprint import pprint
 import math
-
+import os
+import shutil
 
 class Application(tk.Frame):
 
@@ -118,8 +119,10 @@ class Application(tk.Frame):
     
     def _set_scale(self):
         value = tk.simpledialog.askfloat("Set Scale", 'Scale Format: Pixel/Distance (meters)', minvalue=0.0, maxvalue=999999.0)
-        if value is None: return
+        if value is None: 
+            return
         self.database.set_scale(self.selected_image_path, value)
+        self.SET_SCALE.config(text='Scale:%f'%(self.database.get_scale(self.selected_image_path)))
 
     def _add_poi(self):
         string = tk.simpledialog.askstring(
@@ -140,6 +143,13 @@ class Application(tk.Frame):
         self.database.add_poi_image(filePath)
 
         self._update_poi_button()
+    def quit2(self):
+        try:
+            os.remove('db.json')
+            shutil.rmtree('features')
+        except:
+            pass
+        self.quit()
 
     def _cycle_poi(self):
         self.database.next_poi()
@@ -153,33 +163,39 @@ class Application(tk.Frame):
         cv.setMouseCallback(self.imageWindow, self.mouse_click_callback)
 
         self.QUIT = tk.Button()
-        self.QUIT['text'] = "Quit"
+        self.QUIT['text'] = "Save and Quit"
         self.QUIT['fg'] = "red"
         self.QUIT['command'] = self.quit
         self.QUIT.grid(row=0, column=0)
 
+        self.QUIT2 = tk.Button()
+        self.QUIT2['text'] = "Clear and Quit"
+        self.QUIT2['fg'] = "red"
+        self.QUIT2['command'] = self.quit2
+        self.QUIT2.grid(row=0, column=1)
+
         self.OPEN_IMG = tk.Button()
         self.OPEN_IMG['text'] = 'Open'
         self.OPEN_IMG['command'] = self.open_image_dialog
-        self.OPEN_IMG.grid(row=0, column=1)
+        self.OPEN_IMG.grid(row=0, column=2)
 
         self.CYCLE_PICTURES = tk.Button()
         self.CYCLE_PICTURES['state'] = tk.DISABLED
         self.CYCLE_PICTURES['text'] = 'Cycle Pictures'
         self.CYCLE_PICTURES['command'] = self._cycle_pictures
-        self.CYCLE_PICTURES.grid(row=0, column=2)
+        self.CYCLE_PICTURES.grid(row=0, column=3)
 
         self.SHOW_KP = tk.Button()
         self.SHOW_KP['state'] = tk.DISABLED
         self.SHOW_KP['text'] = 'Show Features'
         self.SHOW_KP['command'] = self._show_keypoints
-        self.SHOW_KP.grid(row=0, column=3)
+        self.SHOW_KP.grid(row=0, column=4)
 
         self.SET_SCALE = tk.Button()
         self.SET_SCALE['state'] = tk.DISABLED
         self.SET_SCALE['text'] = 'Set Scale'
         self.SET_SCALE['command'] = self._set_scale
-        self.SET_SCALE.grid(row=0, column=4)
+        self.SET_SCALE.grid(row=0, column=5)
 
         tk.Label(text='Points of Interest:').grid(
             row=1, column=0, columnspan=2)

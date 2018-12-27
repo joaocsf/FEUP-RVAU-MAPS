@@ -106,8 +106,12 @@ class Database():
     def get_scale(self, path):
         images = self.retrieve_images_dict()
         obj = images[path]
-        value = obj['scale']
-        return obj['scale'] if not value is None else 0
+        value = None
+        try:
+            value = obj['scale']
+        except:
+            pass
+        return obj['scale'] if not value is None else 1
 
     def calculate_best_homogragy(self, image_features):
 

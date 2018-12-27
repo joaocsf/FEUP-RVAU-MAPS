@@ -13,11 +13,21 @@ parser.add_argument('-cam', metavar='index', type=int, help='index of the camera
 
 parser.add_argument('-debug', action='store_true')
 
+parser.add_argument('-clear', action='store_true')
+
 args = parser.parse_args()
 
 index = args.cam
 
 debug = args.debug
+
+if args.clear:
+    print('Calibration file deleted')
+    try:
+        os.remove('calibration.npy')
+    except:
+        exit()
+    exit()
 
 print('Take pictures of multiple chessboards to calibrate\n-Space to take a picture\n-Esc to end')
 
