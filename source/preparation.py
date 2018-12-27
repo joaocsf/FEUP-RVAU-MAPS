@@ -141,7 +141,17 @@ class Application(tk.Frame):
             )
         )
         self.database.add_poi_image(filePath)
-
+    
+    def change_image(self):
+        filePath = tk.filedialog.askopenfilename(
+            title='Select a POI\'s Image',
+            filetypes=(
+                ('all files', '*'),
+                ('jpeg files', '*.jpg'),
+                ('png files', '*.png')
+            )
+        )
+        self.database.add_poi_image(filePath)
         self._update_poi_button()
     def quit2(self):
         try:
@@ -212,15 +222,22 @@ class Application(tk.Frame):
         self.IMAGE_POI['command'] = self._show_image
         self.IMAGE_POI.grid(row=2, column=1, columnspan=1)
 
+        self.IMAGE_POI_CHANGE = tk.Button()
+        self.IMAGE_POI_CHANGE['text'] = 'Change image'
+        self.IMAGE_POI_CHANGE['state'] = tk.DISABLED
+        self.IMAGE_POI_CHANGE['command'] = self.change_image
+        self.IMAGE_POI_CHANGE.grid(row=2, column=2, columnspan=1)
+
         self.CYCLE_POI = tk.Button()
         self.CYCLE_POI['text'] = 'POI NAME'
         self.CYCLE_POI['state'] = tk.DISABLED
         self.CYCLE_POI['command'] = self._cycle_poi
-        self.CYCLE_POI.grid(row=2, column=2, columnspan=1)
+        self.CYCLE_POI.grid(row=2, column=3, columnspan=1)
 
         self.image_dependent_buttons.append(self.SHOW_KP)
         self.image_dependent_buttons.append(self.ADD_POI)
         self.image_dependent_buttons.append(self.IMAGE_POI)
+        self.image_dependent_buttons.append(self.IMAGE_POI_CHANGE)
         self.image_dependent_buttons.append(self.SET_SCALE)
 
     def __on_db_loaded__(self):
