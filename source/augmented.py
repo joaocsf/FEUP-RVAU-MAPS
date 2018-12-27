@@ -100,6 +100,7 @@ def evaluate(image):
     closest_i = 0
     closest_dist = 100000000000
     selected_poi = None
+    poi_point = None
 
     _, transposed_homography = cv.invert(homography)
     transposed_center = homography_point(transposed_homography, (centerx, centery))
@@ -107,16 +108,17 @@ def evaluate(image):
 
     for k, p in pois.items():
         dp = homography_point(homography, p)
-        poilist.append((k,(int(dp[0]), int(dp[1]))))
+        dp = (int(dp[0]), int(dp[1]))
+        poilist.append((k,dp))
         distance = cv.norm((p[0], p[1]), transposed_center)
         if distance < closest_dist:
             selected_poi = p
+            poi_point = dp
             closest_dist = distance
             closest_i = len(poilist)-1
 
     real_distance = closest_dist/scale
 
-    cv.putText(image, '{0}: {1}'.format(poilist[closest_i][0], distance_to_text(real_distance)), (50,50), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 1, cv.LINE_AA)
 
     p1 = homography_point(homography, (transposed_center[0], transposed_center[1] + 1000))
     p2 = homography_point(homography, (transposed_center[0], transposed_center[1] -1000))
@@ -133,16 +135,21 @@ def evaluate(image):
                 cv.line(image, dp, (centerx,centery),(0,0,255),thickness=3)
             else:
                 cv.line(image, dp, (centerx,centery),(255,0,0), thickness = 2)
-    else:
-        k, dp = poilist[closest_i]
-        cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX,
-                2, (0, 0, 255), 2, cv.LINE_AA)
 
-        cv.circle(image, dp, 5, (0, 0, 0), thickness=-1)
-        cv.circle(image, dp, 3, (0, 255, 0), thickness=-1)
+    img_scale = 3
+    imgx = math.floor(image.shape[1]/img_scale)
+    imgy = math.floor(image.shape[0]/img_scale)
 
-    imgx = math.floor(image.shape[1]/5)
-    imgy = math.floor(image.shape[0]/5)
+    uc = (image.shape[1]-10-imgx,image.shape[0]-10-30-imgy)
+    lc = (image.shape[1],image.shape[0])
+
+    textPos = (uc[0]+10, uc[1]+20)
+
+    cv.line(image, poi_point, uc, (255,255,255), 2, lineType=cv.LINE_AA)
+    cv.rectangle(image, uc, lc, (255,255,255), -1)
+
+    cv.putText(image, '{0}: {1}'.format(poilist[closest_i][0], distance_to_text(real_distance)), textPos, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv.LINE_AA)
+
     if poi_imgs[poilist[closest_i][0]] is not None:
         img = cv.resize(poi_imgs[poilist[closest_i][0]],(imgx,imgy))
         image[image.shape[0]-5-imgy:image.shape[0]-5,image.shape[1]-5-imgx:image.shape[1]-5] = img
