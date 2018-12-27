@@ -279,23 +279,20 @@ def compute_homography(features1, features2):
 
     fb = cv.BFMatcher()
 
-    matches = fb.knnMatch(des1, des2, k=2)
+    matches = fb.match(des1, des2)
 
-    good = []
-    try:
-        for m, n in matches:
-            if m.distance < 0.7 * n.distance:
-                good.append(m)
-    except:
-        return None
+   
+    matches = sorted(matches, key = lambda x: x.distance)
 
-    if len(good) > MIN_MATCH_COUNT:
+    if len(matches) > MIN_MATCH_COUNT:
+        good = matches[:MIN_MATCH_COUNT]
         pts1 = np.float32(
             [features1[0][m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
         pts2 = np.float32(
             [features2[0][m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
 
         H, mask = cv.findHomography(pts1, pts2, cv.RANSAC, 5.0)
+
         return H
     else:
         return None

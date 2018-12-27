@@ -14,8 +14,10 @@ import math
 index = 0
 
 database = Database('db.json')
-axis = np.float32([[-1,-1,0], [-1,1,0], [1,1,0], [1,-1,0],
-                   [0,0,-2]])
+base = 0.5
+height = 2
+axis = np.float32([[-base,-base,0], [-base,base,0], [base,base,0], [base,-base,0],
+                   [0,0,-height]])
 
 compass = np.float32([[-0.2,0], [0.2,0], [0,1], [0,-1]])
 
