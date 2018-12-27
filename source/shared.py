@@ -7,7 +7,7 @@ import pickle
 import json
 import os
 
-MIN_MATCH_COUNT = 5
+MIN_MATCH_COUNT = 10
 
 
 class Database():
@@ -91,6 +91,19 @@ class Database():
         if update:
             self.update_key_points(path)
         self.save()
+    
+    def set_scale(self, path, scale):
+        images = self.retrieve_images_dict()
+        obj = images[path]
+        obj['scale'] = scale
+
+        self.save()
+    
+    def get_scale(self, path):
+        images = self.retrieve_images_dict()
+        obj = images[path]
+        value = obj['scale']
+        return obj['scale'] if not value is None else 0
 
     def calculate_best_homogragy(self, image_features):
 
@@ -100,9 +113,9 @@ class Database():
             if T is None: continue
             H, rvec, tvec = T
             if not H is None:
-                return (T, self.retrieve_pois(someImage))
+                return (T, self.retrieve_pois(someImage), self.get_scale(someImage))
 
-        return ((None, None, None), self.retrieve_pois(someImage))
+        return ((None, None, None), self.retrieve_pois(someImage), 0)
     def retrieve_features(self, path):
         images = self.retrieve_images_dict()
         obj = images[path]
@@ -143,6 +156,7 @@ class Database():
             
             for name, point in control_pois.items():
                 new_point = homography_point(H, point)
+                new_point = (int(new_point[0]), int(new_point[1]))
                 self.associate_poi(key, new_point, name, False)
 
     def retrieve_images_dict(self):
@@ -256,7 +270,7 @@ def load_camera_calibration(path):
 
 def homography_point(H, p):
   rp = H @ (p[0], p[1], 1)
-  dp = (int(rp[0] / rp[2]), int(rp[1] / rp[2]))
+  dp = (rp[0] / rp[2], rp[1] / rp[2])
   return dp
 
 def compute_homography(features1, features2):
@@ -286,34 +300,35 @@ def compute_homography(features1, features2):
     else:
         return None
 
+def distance_to_text(distance):
+    if distance >= 1000:
+        return '{:.2f} km'.format(distance/1000)
+
+    return '{:.2f} m'.format(distance/1000)
 def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_points):
-    FLANN_INDEX_KDTREE = 1
-    FLANN_INDEX_LSH = 6
+    # FLANN_INDEX_KDTREE = 1
+    # FLANN_INDEX_LSH = 6
     # index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
     # search_params = dict(algorithm = FLANN_INDEX_LSH,
-    #                  table_number = 6, # 12
-    #                  key_size = 12,     # 20
-    #                  multi_probe_level = 1)
+    #                   table_number = 6, # 12
+    #                   key_size = 12,     # 20
+    #                   multi_probe_level = 1)
 
     des1 = features1[1]
     des2 = features2[1]
 
     fb = cv.BFMatcher()
 
-    # fb = cv.FlannBasedMatcher(index_params, search_params)
-    # des1 = np.float32(des1)
-    # des2 = np.float32(des2)
+    #fb = cv.FlannBasedMatcher(index_params, search_params)
+    #des1 = np.float32(des1)
+    #des2 = np.float32(des2)
 
-    matches = fb.knnMatch(des1, des2, k=2)
+    matches = fb.match(des1, des2)
 
-    good = []
-    try:
-        for m, n in matches:
-            if m.distance < 0.7 * n.distance:
-                good.append(m)
-    except:
-        return None
-    if len(good) > MIN_MATCH_COUNT:
+    matches = sorted(matches, key = lambda x: x.distance)
+
+    if len(matches) > MIN_MATCH_COUNT:
+        good = matches[:MIN_MATCH_COUNT]
         pts1 = np.float32(
             [features1[0][m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
         pts2 = np.float32(

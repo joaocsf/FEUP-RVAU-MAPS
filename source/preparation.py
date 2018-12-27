@@ -70,6 +70,8 @@ class Application(tk.Frame):
         self.selected_image_path = path
         drawnPOIS = self.draw_pois(
             self.selected_image_path, self.selected_image)
+        
+        self.SET_SCALE.config(text='Scale:%f'%(self.database.get_scale(self.selected_image_path)))
         cv.imshow(self.imageWindow, drawnPOIS)
         cv.waitKey(1)
         self._on_image_opened(True)
@@ -113,6 +115,11 @@ class Application(tk.Frame):
         self.CYCLE_POI['state'] = tk.NORMAL if self.database.has_pois(
         ) else tk.DISABLED
         self.CYCLE_POI.config(text=self.database.get_poi_label())
+    
+    def _set_scale(self):
+        value = tk.simpledialog.askfloat("Set Scale", 'Scale Format: Pixel/Distance (meters)', minvalue=0.0, maxvalue=999999.0)
+        if value is None: return
+        self.database.set_scale(self.selected_image_path, value)
 
     def _add_poi(self):
         string = tk.simpledialog.askstring(
@@ -168,6 +175,12 @@ class Application(tk.Frame):
         self.SHOW_KP['command'] = self._show_keypoints
         self.SHOW_KP.grid(row=0, column=3)
 
+        self.SET_SCALE = tk.Button()
+        self.SET_SCALE['state'] = tk.DISABLED
+        self.SET_SCALE['text'] = 'Set Scale'
+        self.SET_SCALE['command'] = self._set_scale
+        self.SET_SCALE.grid(row=0, column=4)
+
         tk.Label(text='Points of Interest:').grid(
             row=1, column=0, columnspan=2)
 
@@ -192,6 +205,7 @@ class Application(tk.Frame):
         self.image_dependent_buttons.append(self.SHOW_KP)
         self.image_dependent_buttons.append(self.ADD_POI)
         self.image_dependent_buttons.append(self.IMAGE_POI)
+        self.image_dependent_buttons.append(self.SET_SCALE)
 
     def __on_db_loaded__(self):
         length = len(self.database.retrieve_keys())

@@ -16,9 +16,35 @@ index = 0
 database = Database('db.json')
 axis = np.float32([[-1,-1,0], [-1,1,0], [1,1,0], [1,-1,0],
                    [0,0,-2]])
+
+compass = np.float32([[-0.2,0], [0.2,0], [0,1], [0,-1]])
+
 poi_imgs = {}
 debug = False
 axis = axis*50
+compass = compass*50
+
+def draw_compass(image, p1, p2):
+    vector = (p2[0] - p1[0], p2[1] - p1[1])
+    theta =np.arctan2(vector[0], -vector[1])
+    c,s = np.cos(theta), np.sin(theta)
+    R = np.array(((c,-s), (s,c)))
+
+    height, width = image.shape[:2]
+
+    displaceX = 50
+    displaceY = height - 50
+    points = []
+    for p in compass:
+        rp = R @ p
+        rp = (int(rp[0]) + displaceX, int(rp[1]) + displaceY)
+        points.append(rp)
+
+    first = np.array([points[0], points[1], points[2]])
+    second = np.array([points[0], points[1], points[3]])
+
+    cv.drawContours(image, [first], -1, (255,0,0), -1)
+    cv.drawContours(image, [second], -1, (0,0, 255), -1)
 
 def draw_axis(image, poi, rvec, tvec, H):
   global database, axis
@@ -61,7 +87,7 @@ def evaluate(image):
     if features[1] is None:
         return image
 
-    (T, pois) = database.calculate_best_homogragy(features)
+    (T, pois, scale) = database.calculate_best_homogragy(features)
 
     if T is None or T[0] is None:
         return image
@@ -72,17 +98,27 @@ def evaluate(image):
     closest_i = 0
     closest_dist = 100000000000
     selected_poi = None
+
+    _, transposed_homography = cv.invert(homography)
+    transposed_center = homography_point(transposed_homography, (centerx, centery))
+
+
     for k, p in pois.items():
-        rp = homography @ (p[0], p[1], 1)
-        dp = (rp[0] / rp[2], rp[1] / rp[2])
-        dp = (int(dp[0]), int(dp[1]))
-        poilist.append((k,dp))
-        distance = cv.norm(dp, (centerx,centery))
+        dp = homography_point(homography, p)
+        poilist.append((k,(int(dp[0]), int(dp[1]))))
+        distance = cv.norm((p[0], p[1]), transposed_center)
         if distance < closest_dist:
             selected_poi = p
             closest_dist = distance
             closest_i = len(poilist)-1
 
+    real_distance = closest_dist/scale
+
+    cv.putText(image, '{0}: {1}'.format(poilist[closest_i][0], distance_to_text(real_distance)), (50,50), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 1, cv.LINE_AA)
+
+    p1 = homography_point(homography, (transposed_center[0], transposed_center[1] + 1000))
+    p2 = homography_point(homography, (transposed_center[0], transposed_center[1] -1000))
+    draw_compass(image, p1, p2)
     draw_axis(image, selected_poi, rvec, tvec, homography)
     if debug:
         for k, dp in poilist:
@@ -98,7 +134,7 @@ def evaluate(image):
     else:
         k, dp = poilist[closest_i]
         cv.putText(image, k, dp, cv.FONT_HERSHEY_SIMPLEX,
-                2, (0, 255, 0), 2, cv.LINE_AA)
+                2, (0, 0, 255), 2, cv.LINE_AA)
 
         cv.circle(image, dp, 5, (0, 0, 0), thickness=-1)
         cv.circle(image, dp, 3, (0, 255, 0), thickness=-1)
