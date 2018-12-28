@@ -103,9 +103,11 @@ for fname in images:
     os.remove(fname)
 
 
-
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
-
+try:
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],None,None)
+except:
+    print('Calibration failed')
+    exit()
 # store mtx and dist
 store_camera_calibration('calibration.npy', mtx, dist)
 
@@ -118,7 +120,7 @@ if debug:
 print('Calibration successful!')
 
 if debug:
-
+    print('Calibration stored in \'calibration.npy\'')
     for i in range(0, len(toshow)):
         cv2.imshow('Checkboard #' + str(i), toshow[i])
 
