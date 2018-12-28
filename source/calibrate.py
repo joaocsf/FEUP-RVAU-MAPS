@@ -109,9 +109,16 @@ ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.sh
 # store mtx and dist
 store_camera_calibration('calibration.npy', mtx, dist)
 
+if debug:
+    print('Camera matrix:')
+    print(mtx)
+    print('Distortion coefficients:')
+    print(dist)
+
 print('Calibration successful!')
 
 if debug:
+
     for i in range(0, len(toshow)):
         cv2.imshow('Checkboard #' + str(i), toshow[i])
 
