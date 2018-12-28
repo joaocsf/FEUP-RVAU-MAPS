@@ -308,8 +308,11 @@ def compute_homography(features1, features2):
 def distance_to_text(distance):
     if distance >= 1000:
         return '{:.2f} km'.format(distance/1000)
+    
+    if distance > 100:
+        return '{:.2f} km'.format(distance/1000)
 
-    return '{:.2f} m'.format(distance/1000)
+    return '{:.2f} m'.format(distance)
 def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_points):
     # FLANN_INDEX_KDTREE = 1
     # FLANN_INDEX_LSH = 6
