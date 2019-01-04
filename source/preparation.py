@@ -11,11 +11,14 @@ import math
 import os
 import shutil
 
+#Classed used to store the preparation application state and UI
 class Application(tk.Frame):
 
+    #Debug method to test the interface
     def say_hi(self):
         print("Hello")
 
+    #Method to store a new image to the database using a dialog
     def open_image_dialog(self):
         filePath = tk.filedialog.askopenfilename(
             title='Select a Map\'s Image',
@@ -28,21 +31,25 @@ class Application(tk.Frame):
 
         self.load_new_image(filePath)
 
+    #Method to receive click for debugging purposes
     def click(self, event):
         print(event.x, event.y)
         text = "{0}, {1}".format(event.x, event.y)
         self.DEBUG.config(text=text)
 
+    #Observer for when an image is open (Button state is updated)
     def _on_image_opened(self, opened):
 
         for btn in self.image_dependent_buttons:
             btn.config(state=tk.NORMAL if opened else tk.HIDDEN)
 
+    #Method to load a new image from the database, given an path
     def load_new_image(self, path):
         self.database.store_image(path)
         self.current_selected_index = self.database.retrieve_keys().index(path)
         self._cycle_pictures()
 
+    #Mouse click callback for placing the POIS. Uses OPENCV window
     def mouse_click_callback(self, event, x, y, flags, param):
         if not event == cv.EVENT_LBUTTONDBLCLK:
             return
@@ -51,7 +58,8 @@ class Application(tk.Frame):
             self.selected_image_path, self.selected_image)
         cv.imshow(self.imageWindow, drawnPOIS)
         cv.waitKey(1)
-
+    
+    #Method to draw the POIS on the current image
     def draw_pois(self, path, image):
         image = image.copy()
         pois = self.database.retrieve_pois(path)
@@ -66,6 +74,7 @@ class Application(tk.Frame):
 
         return image
 
+    #Main method to open an image, draws the POIS and updates the remaining buttons
     def open_image(self, path):
         self.selected_image = cv.imread(path, cv.IMREAD_COLOR)
         self.selected_image_path = path
@@ -77,10 +86,12 @@ class Application(tk.Frame):
         cv.waitKey(1)
         self._on_image_opened(True)
 
+    #Helper method to show the feature points for the current selected image
     def _show_keypoints(self):
         kp, _ = self.database.retrieve_features(self.selected_image_path)
         self.show_keypoints(kp)
 
+    #Method to show the keypoints for the current selected image
     def show_keypoints(self, keypoints):
         kp = keypoints
         img2 = self.selected_image.copy()
@@ -89,16 +100,19 @@ class Application(tk.Frame):
         cv.imshow('keypoints', img2)
         cv.waitKey(1)
 
+    # Helper method to get the image of currently selected POI
     def _show_image(self):
         path = self.database.get_poi_image()
         self.show_image(path)
 
+    # Method to show the image of currently selected POI
     def show_image(self, path):
         image = cv.imread(path)
         cv.namedWindow('image', cv.WINDOW_NORMAL)
         cv.imshow('image', image)
         cv.waitKey(1)
 
+    #Method to cycle the current selected picture from the database
     def _cycle_pictures(self):
         keys = self.database.retrieve_keys()
         length = len(keys)
@@ -112,11 +126,13 @@ class Application(tk.Frame):
             self.current_selected_index = (
                 self.current_selected_index + 1) % len(keys)
 
+    #Method to update the point of interest button state
     def _update_poi_button(self):
         self.CYCLE_POI['state'] = tk.NORMAL if self.database.has_pois(
         ) else tk.DISABLED
         self.CYCLE_POI.config(text=self.database.get_poi_label())
     
+    #Method to set the scale measured in Pixel/Meters 
     def _set_scale(self):
         value = tk.simpledialog.askfloat("Set Scale", 'Scale Format: Pixel/Distance (meters)', minvalue=0.0, maxvalue=999999.0)
         if value is None: 
@@ -124,6 +140,7 @@ class Application(tk.Frame):
         self.database.set_scale(self.selected_image_path, value)
         self.SET_SCALE.config(text='Scale:%f'%(self.database.get_scale(self.selected_image_path)))
 
+    #Helper Method to add a new Point of interest
     def _add_poi(self):
         string = tk.simpledialog.askstring(
             'Point of Interest', 'Point of Interest Name')
@@ -142,6 +159,7 @@ class Application(tk.Frame):
         )
         self.database.add_poi_image(filePath)
     
+    #Helper Method to update the image of a Point of interest
     def change_image(self):
         filePath = tk.filedialog.askopenfilename(
             title='Select a POI\'s Image',
@@ -153,6 +171,8 @@ class Application(tk.Frame):
         )
         self.database.add_poi_image(filePath)
         self._update_poi_button()
+    
+    #Method to remove the stored database and pre-computed features
     def quit2(self):
         try:
             os.remove('db.json')
@@ -161,10 +181,12 @@ class Application(tk.Frame):
             pass
         self.quit()
 
+    #Method to cycle the current selected poi
     def _cycle_poi(self):
         self.database.next_poi()
         self._update_poi_button()
 
+    #Method to create all the widgets of the application
     def create_widgets(self):
         self.image_dependent_buttons = []
 
@@ -240,6 +262,7 @@ class Application(tk.Frame):
         self.image_dependent_buttons.append(self.IMAGE_POI_CHANGE)
         self.image_dependent_buttons.append(self.SET_SCALE)
 
+    #Event called when the database is loaded 
     def __on_db_loaded__(self):
         length = len(self.database.retrieve_keys())
         self.CYCLE_PICTURES.config(
@@ -249,6 +272,7 @@ class Application(tk.Frame):
         self._cycle_pictures()
         self._update_poi_button()
 
+    #Class Constructor, Reload or Create a new state for the application.
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
         self.current_selected_index = 0
@@ -259,6 +283,7 @@ class Application(tk.Frame):
         self.__on_db_loaded__()
 
 
+#Main method to create the application
 def main():
     root = tk.Tk()
     root.title('Toolbox')

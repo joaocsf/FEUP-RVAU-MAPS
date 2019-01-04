@@ -138,6 +138,7 @@ class Database():
 
         return self.cached_features[features_filename]
 
+    # Method to calculate and store the features for a specific image
     def _compute_features(self, path):
         images = self.retrieve_images_dict()
         obj = images[path]
@@ -153,6 +154,7 @@ class Database():
         kp, des = calculate_key_points_akaze(image)
         store_features(features_filename, kp, des)
 
+    # Method to Update all the keypoints given an control image as a base. For each image stored on the dataset the points will be replaced based on the points of interest stored on the control image
     def update_key_points(self, control_image):
         control_features = self.retrieve_features(control_image)
         control_pois = self.retrieve_pois(control_image)
@@ -202,7 +204,7 @@ class Database():
 
 # Helper Methods
 
-
+# Converts opencv image format to tkinter image format
 def image_cv_2_tk(image):
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
     pilFormat = Image.fromarray(image)
@@ -282,6 +284,7 @@ def store_camera_calibration(path, matrix, dist_coefs):
 def load_camera_calibration(path):
   return np.load(path)
 
+# Method do multiply a point by the homography and convert homogeneous coordinates to x,y coords
 def homography_point(H, p):
   rp = H @ (p[0], p[1], 1)
   dp = (rp[0] / rp[2], rp[1] / rp[2])
@@ -299,6 +302,7 @@ def compute_homography(features1, features2):
    
     matches = sorted(matches, key = lambda x: x.distance)
 
+    #Check if enough mathces are found
     if len(matches) > MIN_MATCH_COUNT:
         good = matches[:MIN_MATCH_COUNT]
         pts1 = np.float32(
@@ -312,6 +316,7 @@ def compute_homography(features1, features2):
     else:
         return None
 
+# Converts a distance to text format
 def distance_to_text(distance):
     if distance >= 1000:
         return '{:.2f} km'.format(distance/1000)
@@ -332,6 +337,7 @@ def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_
 
     matches = sorted(matches, key = lambda x: x.distance)
 
+    # Check if enough matches are found
     if len(matches) > MIN_MATCH_COUNT:
         good = matches[:MIN_MATCH_COUNT]
         pts1 = np.float32(
@@ -339,15 +345,19 @@ def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_
         pts2 = np.float32(
             [features2[0][m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
 
+        # Calculate new points based on the plane given by pts1. Adding a new axis(Z) with Z = 0
         pts3 = []
         for pt in pts1:
           pts3.append([pt[0][0], pt[0][1], 0])
 
         pts3 = np.float32(pts3).reshape(-1,1,3)
 
+        # Compute the homography from image1 to image2
         H, mask = cv.findHomography(pts1, pts2, cv.RANSAC, 5.0)
 
 
+        # Calculate camera's rotation and translation vectors
+        pts3 = []
         _, rvec, tvec, _= cv.solvePnPRansac(pts3, pts2,intrinsic_matrix, coef_points)
 
         return H, rvec, tvec
