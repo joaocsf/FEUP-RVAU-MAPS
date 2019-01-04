@@ -357,7 +357,6 @@ def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_
 
 
         # Calculate camera's rotation and translation vectors
-        pts3 = []
         _, rvec, tvec, _= cv.solvePnPRansac(pts3, pts2,intrinsic_matrix, coef_points)
 
         return H, rvec, tvec

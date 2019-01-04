@@ -65,7 +65,6 @@ def draw_axis(image, poi, rvec, tvec, H):
   height, width = image.shape[:2]
 
   #Clamp the values to avoid problems when drawing the piramid
-  intrinsic, dist = database.get_calibration()
   points = [ [np.clip(x[0][0],0,width), np.clip(x[0][1], 0, height)]  for x in points]
   points = np.int32(points).reshape(-1,2)
 
