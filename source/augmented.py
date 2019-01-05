@@ -102,7 +102,7 @@ def evaluate(image):
     # Returns T: Wich is the homography and camera transformation
     # POIS: The points of interest coordinates (from the matched image)
     # Scale: The scale measured in pixels/meters
-    (T, pois, scale) = database.calculate_best_homogragy(features)
+    (T, pois, scale) = database.calculate_best_homogragy(features, image)
 
     if T is None or T[0] is None:
         return image
@@ -220,6 +220,7 @@ def load_images():
 
 #Main method to parse the program arguments
 def main():
+    global database
     parser = argparse.ArgumentParser(description='Calibrate camera')
 
     parser.add_argument('-cam', metavar='index', type=int,
@@ -230,6 +231,8 @@ def main():
     parser.add_argument('-debug', action='store_true')
 
     args = parser.parse_args()
+
+    database.DEBUG = args.debug
 
     global index
     index = args.cam

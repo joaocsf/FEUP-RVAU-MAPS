@@ -14,6 +14,7 @@ MIN_MATCH_COUNT = 10
 # Points of interest and map data is stored in db.json
 class Database():
     def __init__(self, path):
+        self.DEBUG = False
         self.cached_features = {}
         self.selected_poi = 0
         try:
@@ -116,11 +117,17 @@ class Database():
             pass
         return obj['scale'] if not value is None else 1
     # Get the best homography between the features in 'image_features' and all images using SIFT
-    def calculate_best_homogragy(self, image_features):
+    def calculate_best_homogragy(self, image_features, image2=None):
 
         for someImage in self.retrieve_keys():
             features = self.retrieve_features(someImage)
-            T = compute_transformations_matrix(features, image_features, self.calibration[0], self.calibration[1])
+            
+            image1 = None
+
+            if self.DEBUG:
+                image1 = cv.imread(someImage, cv.IMREAD_COLOR)
+
+            T = compute_transformations_matrix(features, image_features, self.calibration[0], self.calibration[1], image1, image2, self.DEBUG)
             if T is None: continue
             H, rvec, tvec = T
             if not H is None:
@@ -327,7 +334,7 @@ def distance_to_text(distance):
     return '{:.2f} m'.format(distance)
 
 # Use camera calibration matrix and distortion matrix to get homography and rotation/translation vectors
-def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_points):
+def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_points, image1=None, image2=None, DEBUG=False):
     des1 = features1[1]
     des2 = features2[1]
 
@@ -355,6 +362,19 @@ def compute_transformations_matrix(features1, features2, intrinsic_matrix, coef_
         # Compute the homography from image1 to image2
         H, mask = cv.findHomography(pts1, pts2, cv.RANSAC, 5.0)
 
+        n_inliers = mask.ravel().tolist()
+
+        if sum(n_inliers) < MIN_MATCH_COUNT - 10:
+            return None
+
+        if DEBUG and not image1 is None and not image2 is None:
+            draw_params = dict(matchColor = (0,255,0),
+                        singlePointColor = None,
+                        matchesMask = mask.ravel().tolist(),
+                        flags = 2)
+            img = cv.drawMatches(image1, features1[0], image2, features2[0], good, None, **draw_params)
+            cv.namedWindow('Matches', cv.WINDOW_NORMAL)
+            cv.imshow('Matches', img)
 
         # Calculate camera's rotation and translation vectors
         _, rvec, tvec, _= cv.solvePnPRansac(pts3, pts2,intrinsic_matrix, coef_points)
